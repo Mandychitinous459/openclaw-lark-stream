@@ -6,6 +6,13 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "no
 import { join } from "node:path";
 
 const SELF_PACKAGE = "@colinlu50/openclaw-lark-stream";
+// Version-gated npm specs:
+// - OpenClaw >= 2026.3.22 → latest build (new SDK)
+// - OpenClaw <  2026.3.22 → pinned old build (legacy SDK)
+const PACKAGE_NEW = "@colinlu50/openclaw-lark-stream";           // >= 2026.3.22
+const PACKAGE_OLD = "@colinlu50/openclaw-lark-stream@260323.3.0"; // < 2026.3.22
+const OPENCLAW_BREAKPOINT = { year: 2026, month: 3, day: 22 };
+
 const STATE_DIR = process.env.OPENCLAW_STATE_DIR || join(process.env.HOME || process.env.USERPROFILE || "", ".openclaw");
 const EXTENSIONS_DIR = join(STATE_DIR, "extensions");
 const CONFIG_FILE = join(STATE_DIR, "openclaw.json");
@@ -31,20 +38,20 @@ process.exit(0);
 // ---------------------------------------------------------------------------
 
 async function runInstall() {
-  // 1. Version check
-  checkOpenClawVersion();
+  // 1. Version check — determines which package version to install
+  const npmSpec = resolveNpmSpec();
 
   // 2. Clean stale state
   cleanPluginState();
 
-  // 3. Install our plugin
-  console.log(`\nInstalling ${SELF_PACKAGE}...`);
+  // 3. Install the appropriate plugin version
+  console.log(`\nInstalling ${npmSpec}...`);
   try {
-    execSync(`openclaw plugins install ${SELF_PACKAGE}`, { stdio: "inherit" });
+    execSync(`openclaw plugins install ${npmSpec}`, { stdio: "inherit" });
   } catch (error) {
-    console.error(`\n❌ Failed to install ${SELF_PACKAGE}.`);
+    console.error(`\n❌ Failed to install ${npmSpec}.`);
     console.error(error.message || error);
-    console.error(`\nYou can retry with: openclaw plugins install ${SELF_PACKAGE}`);
+    console.error(`\nYou can retry with: openclaw plugins install ${npmSpec}`);
     process.exit(error.status ?? 1);
   }
   console.log(`\n✅ Plugin installed successfully.`);
@@ -67,22 +74,53 @@ async function runInstall() {
 }
 
 // ---------------------------------------------------------------------------
-// Version check
+// Version detection — returns the correct npm spec to install
 // ---------------------------------------------------------------------------
 
-function checkOpenClawVersion() {
+/**
+ * Detect the installed OpenClaw version and return the correct npm spec:
+ * - >= 2026.3.22 → latest package (new SDK)
+ * - <  2026.3.22 → pinned legacy package
+ */
+function resolveNpmSpec() {
+  let verString;
   try {
-    const ver = execSync("openclaw -v", { encoding: "utf8" }).trim();
-    console.log(`OpenClaw version: ${ver}`);
-    if (!ver.includes("2026.3.13")) {
-      console.warn(`\n⚠️  This plugin is tested with OpenClaw 2026.3.13.`);
-      console.warn(`   Current version: ${ver}`);
-      console.warn(`   To install the compatible version: npm install -g openclaw@2026.3.13\n`);
-    }
+    verString = execSync("openclaw -v", { encoding: "utf8" }).trim();
+    console.log(`OpenClaw version: ${verString}`);
   } catch {
-    console.error("❌ OpenClaw not found. Install it first: npm install -g openclaw@2026.3.13");
+    console.error("❌ OpenClaw not found. Install it first: npm install -g openclaw");
     process.exit(1);
   }
+
+  const ver = parseOpenClawVersion(verString);
+  if (!ver) {
+    console.warn(`⚠️  Could not parse OpenClaw version "${verString}", installing latest.`);
+    return PACKAGE_NEW;
+  }
+
+  const isNew = isVersionAtLeast(ver, OPENCLAW_BREAKPOINT);
+  if (isNew) {
+    console.log(`✅ OpenClaw >= 2026.3.22 detected — installing latest plugin version.`);
+    return PACKAGE_NEW;
+  } else {
+    console.log(`ℹ️  OpenClaw < 2026.3.22 detected — installing legacy plugin version.`);
+    console.log(`   (To use the latest plugin, upgrade OpenClaw: npm install -g openclaw)`);
+    return PACKAGE_OLD;
+  }
+}
+
+/** Parse "YYYY.M.D" or "OpenClaw YYYY.M.D ..." into { year, month, day }. */
+function parseOpenClawVersion(str) {
+  const m = /(\d{4})\.(\d+)\.(\d+)/.exec(str);
+  if (!m) return null;
+  return { year: parseInt(m[1], 10), month: parseInt(m[2], 10), day: parseInt(m[3], 10) };
+}
+
+/** True if ver >= { year, month, day }. */
+function isVersionAtLeast(ver, min) {
+  if (ver.year !== min.year) return ver.year > min.year;
+  if (ver.month !== min.month) return ver.month > min.month;
+  return ver.day >= min.day;
 }
 
 // ---------------------------------------------------------------------------

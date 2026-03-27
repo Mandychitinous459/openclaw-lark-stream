@@ -23,11 +23,13 @@ The official plugin delivers LLM block results all at once after completion. Thi
 
 ## 📦 Installation
 
-Requires [OpenClaw](https://openclaw.ai) >= 2026.3.22 and Node.js (>= v22).
+Requires [OpenClaw](https://openclaw.ai) and Node.js (>= v22).
+
+The install script automatically detects your OpenClaw version and installs the right plugin:
+- OpenClaw **>= 2026.3.22** → installs the latest version (reasoning streaming, AskUserQuestion, etc.)
+- OpenClaw **< 2026.3.22** → installs the legacy-compatible version
 
 > [!NOTE]
-> If you are using an older OpenClaw version (< 2026.3.22), use the `0322` branch instead.
->
 > **Alibaba Cloud OpenClaw plans are not supported** (permission restrictions). Please use a self-hosted server.
 
 ```bash

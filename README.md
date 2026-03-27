@@ -23,11 +23,13 @@
 
 ## 📦 安装
 
-需要 [OpenClaw](https://openclaw.ai) >= 2026.3.22 和 Node.js（>= v22）。
+需要 [OpenClaw](https://openclaw.ai) 和 Node.js（>= v22）。
+
+安装脚本会自动检测 OpenClaw 版本并安装对应的插件版本：
+- OpenClaw **>= 2026.3.22** → 自动安装最新版（支持推理流式、AskUserQuestion 等）
+- OpenClaw **< 2026.3.22** → 自动安装兼容旧版的插件
 
 > [!NOTE]
-> 如果你使用的是旧版 OpenClaw（< 2026.3.22），请使用 `0322` 分支版本。
->
 > **不支持阿里云 OpenClaw 套餐**（权限限制），请使用自建服务器安装。
 
 ```bash
