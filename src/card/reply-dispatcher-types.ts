@@ -57,6 +57,19 @@ export const PHASE_TRANSITIONS: Record<CardPhase, ReadonlySet<CardPhase>> = {
 };
 
 // ---------------------------------------------------------------------------
+// StreamEvent — ordered record of reasoning/tool events for final card
+// ---------------------------------------------------------------------------
+
+/**
+ * A single event in the ordered stream of model activity.
+ * Used to render the final card's toggle panels in chronological order:
+ * think → tool → think → tool → ...
+ */
+export type StreamEvent =
+  | { type: 'reasoning'; text: string; elapsedMs?: number }
+  | { type: 'tool'; name: string; status: 'complete' | 'error'; durationMs?: number };
+
+// ---------------------------------------------------------------------------
 // Structured state aggregates
 // ---------------------------------------------------------------------------
 

@@ -41,6 +41,7 @@ import type {
   CardPhase,
   FooterSessionMetrics,
   ReasoningState,
+  StreamEvent,
   StreamingCardDeps,
   StreamingTextState,
   TerminalReason,
@@ -131,8 +132,13 @@ export class StreamingCardController {
     isReasoningPhase: false,
   };
 
-  // ---- Tool call tracking ----
+  // ---- Tool call tracking (for streaming display) ----
   private toolCalls: ToolCallInfo[] = [];
+
+  // ---- Ordered event log (for final card toggle panels) ----
+  // Records reasoning blocks and tool calls in the order they occurred:
+  // think → tool → think → tool → ...
+  private streamEvents: StreamEvent[] = [];
 
   // ---- Sub-controllers ----
   private readonly flush: FlushController;
@@ -433,10 +439,18 @@ export class StreamingCardController {
       return;
     }
 
-    // Answer payload (may also contain inline reasoning from tags)
-    this.reasoning.isReasoningPhase = false;
-    if (split.reasoningText) {
+    // Answer payload — reasoning phase ends here
+    if (this.reasoning.isReasoningPhase) {
+      // Finalize elapsed time before committing the event
+      this.reasoning.reasoningElapsedMs = this.reasoning.reasoningStartTime
+        ? Date.now() - this.reasoning.reasoningStartTime
+        : this.reasoning.reasoningElapsedMs;
+      this.commitReasoningEvent();
+      this.reasoning.isReasoningPhase = false;
+    } else if (split.reasoningText) {
+      // Inline reasoning embedded in answer (tag-based) — commit it now
       this.reasoning.accumulatedReasoningText = split.reasoningText;
+      this.commitReasoningEvent();
     }
     const answerText = split.answerText ?? text;
 
@@ -479,6 +493,10 @@ export class StreamingCardController {
     const toolName = payload.name ?? 'unknown';
     log.debug('onToolStart', { toolName, phase: payload.phase });
 
+    // Commit any pending reasoning block before starting a new tool
+    this.commitReasoningEvent();
+    this.reasoning.isReasoningPhase = false;
+
     // Mark any previously running tools as complete before starting a new one
     this.completeRunningTools();
 
@@ -501,8 +519,26 @@ export class StreamingCardController {
       if (tc.status === 'running') {
         tc.status = 'complete';
         tc.durationMs = tc.startTime ? Date.now() - tc.startTime : 0;
+        // Commit completed tool to ordered event log
+        this.streamEvents.push({ type: 'tool', name: tc.name, status: 'complete', durationMs: tc.durationMs });
       }
     }
+  }
+
+  /**
+   * Commit accumulated reasoning text as an ordered event, then reset.
+   * Called whenever the reasoning phase ends (tool starts, answer arrives).
+   */
+  private commitReasoningEvent(): void {
+    if (!this.reasoning.accumulatedReasoningText) return;
+    this.streamEvents.push({
+      type: 'reasoning',
+      text: this.reasoning.accumulatedReasoningText,
+      elapsedMs: this.reasoning.reasoningElapsedMs || undefined,
+    });
+    this.reasoning.accumulatedReasoningText = '';
+    this.reasoning.reasoningStartTime = null;
+    this.reasoning.reasoningElapsedMs = 0;
   }
 
   async onPartialReply(payload: ReplyPayload): Promise<void> {
@@ -533,6 +569,8 @@ export class StreamingCardController {
       this.reasoning.reasoningElapsedMs = this.reasoning.reasoningStartTime
         ? Date.now() - this.reasoning.reasoningStartTime
         : 0;
+      // Commit the reasoning block as an ordered event
+      this.commitReasoningEvent();
     }
 
     // 检测回复边界：文本长度缩短 → 新回复开始
@@ -565,6 +603,9 @@ export class StreamingCardController {
 
     if (this.cardCreationPromise) await this.cardCreationPromise;
 
+    // Commit any remaining reasoning before building error card
+    this.commitReasoningEvent();
+
     const errorEffectiveCardId = this.cardKit.cardKitCardId ?? this.cardKit.originalCardKitCardId;
     const footerMetrics = this.needsFooterMetrics() ? await this.getFooterSessionMetrics() : undefined;
     if (this.cardKit.cardMessageId) {
@@ -588,9 +629,7 @@ export class StreamingCardController {
         }
         const errorCard = buildCardContent('complete', {
           text: terminalContent.text,
-          toolCalls: this.toolCalls,
-          reasoningText: terminalContent.reasoningText,
-          reasoningElapsedMs: this.reasoning.reasoningElapsedMs || undefined,
+          streamEvents: this.streamEvents,
           elapsedMs: this.elapsed(),
           isError: true,
           footer: this.deps.resolvedFooter,
@@ -667,14 +706,13 @@ export class StreamingCardController {
         );
         const footerMetrics = this.needsFooterMetrics() ? await this.getFooterSessionMetrics() : undefined;
 
-        // Mark any remaining running tools as complete before final card
+        // Mark any remaining running tools as complete, commit remaining reasoning
         this.completeRunningTools();
+        this.commitReasoningEvent();
 
         const completeCard = buildCardContent('complete', {
           text: terminalContent.text,
-          toolCalls: this.toolCalls,
-          reasoningText: terminalContent.reasoningText,
-          reasoningElapsedMs: this.reasoning.reasoningElapsedMs || undefined,
+          streamEvents: this.streamEvents,
           elapsedMs: this.elapsed(),
           footer: this.deps.resolvedFooter,
           footerMetrics,
@@ -744,15 +782,14 @@ export class StreamingCardController {
         this.imageResolver,
       );
       const footerMetrics = this.needsFooterMetrics() ? await this.getFooterSessionMetrics() : undefined;
-      // Mark any running tools as aborted
+      // Mark any running tools as aborted, commit any pending reasoning
       this.completeRunningTools();
+      this.commitReasoningEvent();
 
       if (effectiveCardId) {
         const abortCardContent = buildCardContent('complete', {
           text: terminalContent.text,
-          toolCalls: this.toolCalls,
-          reasoningText: terminalContent.reasoningText,
-          reasoningElapsedMs: this.reasoning.reasoningElapsedMs || undefined,
+          streamEvents: this.streamEvents,
           elapsedMs,
           isAborted: true,
           footer: this.deps.resolvedFooter,
@@ -764,9 +801,7 @@ export class StreamingCardController {
         // IM fallback: 卡片不是通过 CardKit 发的，用 im.message.patch 更新
         const abortCard = buildCardContent('complete', {
           text: terminalContent.text,
-          toolCalls: this.toolCalls,
-          reasoningText: terminalContent.reasoningText,
-          reasoningElapsedMs: this.reasoning.reasoningElapsedMs || undefined,
+          streamEvents: this.streamEvents,
           elapsedMs,
           isAborted: true,
           footer: this.deps.resolvedFooter,

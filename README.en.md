@@ -1,30 +1,34 @@
 English | [中文](./README.md)
 
-# OpenClaw Lark/Feishu Plugin — Stream Card Fork
+# OpenClaw Lark/Feishu Plugin — Stream Card Edition
 
 ![demo](./demo.gif)
 
-Fork of the official [openclaw-larksuite](https://github.com/larksuite/openclaw-larksuite) plugin with **streaming block output** and **tool call indicators**.
+Based on the official [openclaw-lark](https://github.com/larksuite/openclaw-lark) plugin, with **real-time streaming output**, **reasoning display**, and **tool call indicators**.
 
 ## ✨ What's Changed
 
-The official plugin delivers LLM block results all at once after completion. This fork enables:
+The official plugin delivers LLM block results all at once after completion. This version enables:
 
 - **Real-time streaming output** — each block's content is progressively appended to the streaming card as it's generated
 - **Group chat streaming** — streaming output works in group chats as well
-- **Tool call indicators** — when the agent calls a tool, the card shows the current tool at the top in real-time, with a collapsible summary panel on completion
+- **Reasoning display** — think content from reasoning models (DeepSeek-R1, Claude 3.7, etc.) streams live, then collapses into an expandable panel
+- **Tool call indicators** — when the agent calls a tool, the card shows the current tool at the top in real-time, collapsing into an expandable panel on completion
+- **Ordered event panels** — the final card shows toggle panels in the order they occurred: think → tool → think → tool, preserving the full reasoning flow
 
 ## 📢 News
 
-- **2026.3.23** — First release with real-time streaming output and tool call indicators
+- **2026.3.27** — Compatible with OpenClaw >= 2026.3.22; added AskUserQuestion interactive tool; reasoning and tool panels now appear in chronological order; fixed card table limit error 230099
+- **2026.3.23** — First release with real-time streaming output and tool call indicators (for OpenClaw < 2026.3.22, use the `0322` branch)
 
 ## 📦 Installation
 
-Requires [OpenClaw](https://openclaw.ai) and Node.js (>= v22).
+Requires [OpenClaw](https://openclaw.ai) >= 2026.3.22 and Node.js (>= v22).
 
-> [!WARNING]
-> - OpenClaw **3.22** has breaking changes that cause plugin errors. Compatibility fix is in progress, expected by **Mar 24**. Please use version 3.13 for now: `npm install -g openclaw@2026.3.13` (check version: `openclaw -v`)
-> - **Alibaba Cloud OpenClaw plans** are not supported due to permission restrictions. Please use a self-hosted server.
+> [!NOTE]
+> If you are using an older OpenClaw version (< 2026.3.22), use the `0322` branch instead.
+>
+> **Alibaba Cloud OpenClaw plans are not supported** (permission restrictions). Please use a self-hosted server.
 
 ```bash
 npx -y @colinlu50/openclaw-lark-stream install

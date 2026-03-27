@@ -9,7 +9,7 @@
  */
 
 import { optimizeMarkdownStyle } from './markdown-style';
-import type { FooterSessionMetrics } from './reply-dispatcher-types';
+import type { FooterSessionMetrics, StreamEvent } from './reply-dispatcher-types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -310,10 +310,12 @@ export function buildCardContent(
   state: CardState,
   data: {
     text?: string;
+    // Streaming display fields (intermediate state)
     reasoningText?: string;
-    reasoningElapsedMs?: number;
     isReasoningPhase?: boolean;
     toolCalls?: ToolCallInfo[];
+    // Final card ordered event log (replaces reasoningText/toolCalls for complete state)
+    streamEvents?: StreamEvent[];
     confirmData?: ConfirmData;
     elapsedMs?: number;
     isError?: boolean;
@@ -337,11 +339,9 @@ export function buildCardContent(
     case 'complete':
       return buildCompleteCard({
         text: data.text ?? '',
-        toolCalls: data.toolCalls ?? [],
+        streamEvents: data.streamEvents ?? [],
         elapsedMs: data.elapsedMs,
         isError: data.isError,
-        reasoningText: data.reasoningText,
-        reasoningElapsedMs: data.reasoningElapsedMs,
         isAborted: data.isAborted,
         footer: data.footer,
         footerMetrics: data.footerMetrics,
@@ -419,11 +419,9 @@ function buildStreamingCard(
 
 function buildCompleteCard(params: {
   text: string;
-  toolCalls: ToolCallInfo[];
+  streamEvents: StreamEvent[];
   elapsedMs?: number;
   isError?: boolean;
-  reasoningText?: string;
-  reasoningElapsedMs?: number;
   isAborted?: boolean;
   footer?: {
     status?: boolean;
@@ -435,99 +433,64 @@ function buildCompleteCard(params: {
   };
   footerMetrics?: FooterSessionMetrics;
 }): FeishuCard {
-  const { text, toolCalls, elapsedMs, isError, reasoningText, reasoningElapsedMs, isAborted, footer, footerMetrics } =
-    params;
+  const { text, streamEvents, elapsedMs, isError, isAborted, footer, footerMetrics } = params;
   const elements: CardElement[] = [];
 
-  // Collapsible reasoning panel (before main content)
-  if (reasoningText) {
-    const dur = reasoningElapsedMs ? formatReasoningDuration(reasoningElapsedMs) : null;
-    const zhLabel = dur ? dur.zh : '思考';
-    const enLabel = dur ? dur.en : 'Thought';
-    elements.push({
-      tag: 'collapsible_panel',
-      expanded: false,
-      header: {
-        title: {
-          tag: 'markdown',
-          content: `💭 ${enLabel}`,
-          i18n_content: {
-            zh_cn: `💭 ${zhLabel}`,
-            en_us: `💭 ${enLabel}`,
+  // Ordered event panels: think → tool → think → tool → ...
+  // Each event becomes a collapsible toggle panel in chronological order.
+  for (const event of streamEvents) {
+    if (event.type === 'reasoning') {
+      const dur = event.elapsedMs ? formatReasoningDuration(event.elapsedMs) : null;
+      const zhLabel = dur ? dur.zh : '思考';
+      const enLabel = dur ? dur.en : 'Thought';
+      elements.push({
+        tag: 'collapsible_panel',
+        expanded: false,
+        header: {
+          title: {
+            tag: 'markdown',
+            content: `💭 ${enLabel}`,
+            i18n_content: { zh_cn: `💭 ${zhLabel}`, en_us: `💭 ${enLabel}` },
           },
+          vertical_align: 'center',
+          icon: { tag: 'standard_icon', token: 'down-small-ccm_outlined', size: '16px 16px' },
+          icon_position: 'follow_text',
+          icon_expanded_angle: -180,
         },
-        vertical_align: 'center',
-        icon: {
-          tag: 'standard_icon',
-          token: 'down-small-ccm_outlined',
-          size: '16px 16px',
-        },
-        icon_position: 'follow_text',
-        icon_expanded_angle: -180,
-      },
-      border: { color: 'grey', corner_radius: '5px' },
-      vertical_spacing: '8px',
-      padding: '8px 8px 8px 8px',
-      elements: [
-        {
-          tag: 'markdown',
-          content: reasoningText,
-          text_size: 'notation',
-        },
-      ],
-    });
-  }
-
-  // Tool calls summary — collapsible panel at the top (after reasoning, before text)
-  if (toolCalls.length > 0) {
-    const totalMs = toolCalls.reduce((sum, tc) => sum + (tc.durationMs ?? 0), 0);
-    const totalDur = totalMs > 0 ? formatElapsed(totalMs) : '';
-
-    const zhHeader = totalDur
-      ? `🔧 ${toolCalls.length} 次工具调用 (${totalDur})`
-      : `🔧 ${toolCalls.length} 次工具调用`;
-    const enHeader = totalDur
-      ? `🔧 ${toolCalls.length} Tool Call${toolCalls.length > 1 ? 's' : ''} (${totalDur})`
-      : `🔧 ${toolCalls.length} Tool Call${toolCalls.length > 1 ? 's' : ''}`;
-
-    const toolDetailLines = toolCalls.map((tc) => {
-      const statusIcon = tc.status === 'complete' ? '✅' : '❌';
-      const dur = tc.durationMs != null ? formatElapsed(tc.durationMs) : '';
-      return dur ? `${statusIcon} **${tc.name}** ${dur}` : `${statusIcon} **${tc.name}**`;
-    });
-
-    elements.push({
-      tag: 'collapsible_panel',
-      expanded: false,
-      header: {
-        title: {
-          tag: 'markdown',
-          content: enHeader,
-          i18n_content: {
-            zh_cn: zhHeader,
-            en_us: enHeader,
+        border: { color: 'grey', corner_radius: '5px' },
+        vertical_spacing: '8px',
+        padding: '8px 8px 8px 8px',
+        elements: [{ tag: 'markdown', content: event.text, text_size: 'notation' }],
+      });
+    } else {
+      // tool event
+      const statusIcon = event.status === 'complete' ? '✅' : '❌';
+      const dur = event.durationMs != null ? formatElapsed(event.durationMs) : '';
+      const zhLabel = dur ? `🔧 ${event.name} (${dur})` : `🔧 ${event.name}`;
+      const enLabel = zhLabel;
+      const detailLine = dur
+        ? `${statusIcon} **${event.name}** ${dur}`
+        : `${statusIcon} **${event.name}**`;
+      elements.push({
+        tag: 'collapsible_panel',
+        expanded: false,
+        header: {
+          title: {
+            tag: 'markdown',
+            content: enLabel,
+            i18n_content: { zh_cn: zhLabel, en_us: enLabel },
           },
+          vertical_align: 'center',
+          icon: { tag: 'standard_icon', token: 'down-small-ccm_outlined', size: '16px 16px' },
+          icon_position: 'follow_text',
+          icon_expanded_angle: -180,
         },
-        vertical_align: 'center',
-        icon: {
-          tag: 'standard_icon',
-          token: 'down-small-ccm_outlined',
-          size: '16px 16px',
-        },
-        icon_position: 'follow_text',
-        icon_expanded_angle: -180,
-      },
-      border: { color: 'grey', corner_radius: '5px' },
-      vertical_spacing: '8px',
-      padding: '8px 8px 8px 8px',
-      elements: [
-        {
-          tag: 'markdown',
-          content: toolDetailLines.join('\n'),
-          text_size: 'notation',
-        },
-      ],
-    });
+        border: { color: 'grey', corner_radius: '5px' },
+        vertical_spacing: '8px',
+        padding: '8px 8px 8px 8px',
+        elements: [{ tag: 'markdown', content: detailLine, text_size: 'notation' }],
+      });
+    }
   }
 
   // Full text content
