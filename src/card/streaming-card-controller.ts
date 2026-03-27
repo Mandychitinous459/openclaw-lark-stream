@@ -188,8 +188,8 @@ export class StreamingCardController {
 
       const sessionApi = runtime.agent?.session;
       if (sessionApi?.resolveStorePath && sessionApi?.loadSessionStore) {
-        const storePath = sessionApi.resolveStorePath(sessionStorePath);
-        const store = sessionApi.loadSessionStore(storePath);
+        const storePath = sessionApi.resolveStorePath(sessionStorePath, { agentId: this.deps.agentId });
+        const store = sessionApi.loadSessionStore(storePath, { skipCache: true });
         const entry = store[key];
         if (!entry || typeof entry !== 'object') {
           log.debug('footer metrics lookup: session entry missing', {

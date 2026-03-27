@@ -435,6 +435,7 @@ function buildCompleteCard(params: {
   isError?: boolean;
   isAborted?: boolean;
   footer?: {
+    verbose?: boolean;
     status?: boolean;
     elapsed?: boolean;
     tokens?: boolean;
@@ -469,17 +470,21 @@ function buildCompleteCard(params: {
       }
     }
 
-    const totalToolMs = streamEvents
-      .filter((e): e is Extract<StreamEvent, { type: 'tool' }> => e.type === 'tool')
-      .reduce((s, e) => s + (e.durationMs ?? 0), 0);
+    const toolEvents = streamEvents.filter((e): e is Extract<StreamEvent, { type: 'tool' }> => e.type === 'tool');
+    const totalToolMs = toolEvents.reduce((s, e) => s + (e.durationMs ?? 0), 0);
     const totalReasonMs = streamEvents
       .filter((e): e is Extract<StreamEvent, { type: 'reasoning' }> => e.type === 'reasoning')
       .reduce((s, e) => s + (e.elapsedMs ?? 0), 0);
     const totalMs = totalToolMs + totalReasonMs;
     const totalDur = totalMs > 0 ? formatElapsed(totalMs) : '';
+    const toolCount = toolEvents.length;
 
-    const zhHeader = totalDur ? `思考过程 (${totalDur})` : '思考过程';
-    const enHeader = totalDur ? `Process (${totalDur})` : 'Process';
+    const zhHeader = toolCount > 0
+      ? (totalDur ? `${toolCount} 次工具调用 (${totalDur})` : `${toolCount} 次工具调用`)
+      : (totalDur ? `思考过程 (${totalDur})` : '思考过程');
+    const enHeader = toolCount > 0
+      ? (totalDur ? `${toolCount} tool calls (${totalDur})` : `${toolCount} tool calls`)
+      : (totalDur ? `Process (${totalDur})` : 'Process');
 
     elements.push({
       tag: 'collapsible_panel',

@@ -185,6 +185,7 @@ export interface FooterSessionMetrics {
 
 export interface StreamingCardDeps {
   cfg: ClawdbotConfig;
+  agentId: string;
   sessionKey: string;
   accountId: string | undefined;
   chatId: string;
