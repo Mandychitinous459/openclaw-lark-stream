@@ -97,13 +97,25 @@ openclaw gateway restart
 Default footer looks like:
 
 ```
-Completed · Elapsed 8.3s · ↑ 19k ↓ 145 · 1% ctx
+✅ · 8.3s · ↑ 19k ↓ 145 · 1% ctx
+```
+
+Enable everything:
+
+```bash
+openclaw config set channels.feishu.footer.status true
+openclaw config set channels.feishu.footer.elapsed true
+openclaw config set channels.feishu.footer.tokens true
+openclaw config set channels.feishu.footer.context true
+openclaw config set channels.feishu.footer.cache true
+openclaw config set channels.feishu.footer.model true
+openclaw gateway restart
 ```
 
 With all options enabled:
 
 ```
-Completed · Elapsed 8.3s · ↑ 19k ↓ 145 · Cache 18k/1k (94%) · 10% ctx · claude-3-7-sonnet
+✅ · 8.3s · ↑ 19k ↓ 145 · Cache 18k/1k (94%) · 1% ctx · claude-3-7-sonnet
 ```
 
 Example — hide token counts, show model name:

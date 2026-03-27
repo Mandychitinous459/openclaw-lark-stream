@@ -231,21 +231,21 @@ export function formatFooterRuntimeSegments(params: {
 
   if (footer?.status) {
     if (isError) {
-      zhParts.push('出错');
-      enParts.push('Error');
+      zhParts.push('❌');
+      enParts.push('❌');
     } else if (isAborted) {
-      zhParts.push('已停止');
-      enParts.push('Stopped');
+      zhParts.push('⏹');
+      enParts.push('⏹');
     } else {
-      zhParts.push('已完成');
-      enParts.push('Completed');
+      zhParts.push('✅');
+      enParts.push('✅');
     }
   }
 
   if (footer?.elapsed && elapsedMs != null) {
     const d = formatElapsed(elapsedMs);
-    zhParts.push(`耗时 ${d}`);
-    enParts.push(`Elapsed ${d}`);
+    zhParts.push(d);
+    enParts.push(d);
   }
 
   if (footer?.tokens && metrics) {

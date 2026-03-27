@@ -97,13 +97,25 @@ openclaw gateway restart
 默认底栏效果：
 
 ```
-已完成 · 耗时 8.3s · ↑ 19k ↓ 145 · 1% ctx
+✅ · 8.3s · ↑ 19k ↓ 145 · 1% ctx
 ```
 
-全部开启后：
+全部开启：
+
+```bash
+openclaw config set channels.feishu.footer.status true
+openclaw config set channels.feishu.footer.elapsed true
+openclaw config set channels.feishu.footer.tokens true
+openclaw config set channels.feishu.footer.context true
+openclaw config set channels.feishu.footer.cache true
+openclaw config set channels.feishu.footer.model true
+openclaw gateway restart
+```
+
+全部开启后效果：
 
 ```
-已完成 · 耗时 8.3s · ↑ 19k ↓ 145 · 缓存 18k/1k (94%) · 上下文 19k/200k (10%) · claude-3-7-sonnet
+✅ · 8.3s · ↑ 19k ↓ 145 · 缓存 18k/1k (94%) · 1% ctx · claude-3-7-sonnet
 ```
 
 示例 — 关闭 token 展示，开启模型名称：
