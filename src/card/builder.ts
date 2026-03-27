@@ -436,61 +436,59 @@ function buildCompleteCard(params: {
   const { text, streamEvents, elapsedMs, isError, isAborted, footer, footerMetrics } = params;
   const elements: CardElement[] = [];
 
-  // Ordered event panels: think → tool → think → tool → ...
-  // Each event becomes a collapsible toggle panel in chronological order.
-  for (const event of streamEvents) {
-    if (event.type === 'reasoning') {
-      const dur = event.elapsedMs ? formatReasoningDuration(event.elapsedMs) : null;
-      const zhLabel = dur ? dur.zh : '思考';
-      const enLabel = dur ? dur.en : 'Thought';
-      elements.push({
-        tag: 'collapsible_panel',
-        expanded: false,
-        header: {
-          title: {
-            tag: 'markdown',
-            content: `💭 ${enLabel}`,
-            i18n_content: { zh_cn: `💭 ${zhLabel}`, en_us: `💭 ${enLabel}` },
-          },
-          vertical_align: 'center',
-          icon: { tag: 'standard_icon', token: 'down-small-ccm_outlined', size: '16px 16px' },
-          icon_position: 'follow_text',
-          icon_expanded_angle: -180,
-        },
-        border: { color: 'grey', corner_radius: '5px' },
-        vertical_spacing: '8px',
-        padding: '8px 8px 8px 8px',
-        elements: [{ tag: 'markdown', content: event.text, text_size: 'notation' }],
-      });
-    } else {
-      // tool event
-      const statusIcon = event.status === 'complete' ? '✅' : '❌';
-      const dur = event.durationMs != null ? formatElapsed(event.durationMs) : '';
-      const zhLabel = dur ? `🔧 ${event.name} (${dur})` : `🔧 ${event.name}`;
-      const enLabel = zhLabel;
-      const detailLine = dur
-        ? `${statusIcon} **${event.name}** ${dur}`
-        : `${statusIcon} **${event.name}**`;
-      elements.push({
-        tag: 'collapsible_panel',
-        expanded: false,
-        header: {
-          title: {
-            tag: 'markdown',
-            content: enLabel,
-            i18n_content: { zh_cn: zhLabel, en_us: enLabel },
-          },
-          vertical_align: 'center',
-          icon: { tag: 'standard_icon', token: 'down-small-ccm_outlined', size: '16px 16px' },
-          icon_position: 'follow_text',
-          icon_expanded_angle: -180,
-        },
-        border: { color: 'grey', corner_radius: '5px' },
-        vertical_spacing: '8px',
-        padding: '8px 8px 8px 8px',
-        elements: [{ tag: 'markdown', content: detailLine, text_size: 'notation' }],
-      });
+  // Single collapsible "思考过程" panel containing all events in order.
+  // Inside: think blocks show their text, tool calls show name + duration.
+  if (streamEvents.length > 0) {
+    const innerLines: string[] = [];
+    for (const event of streamEvents) {
+      if (event.type === 'reasoning') {
+        const dur = event.elapsedMs ? formatReasoningDuration(event.elapsedMs) : null;
+        const zhLabel = dur ? `💭 ${dur.zh}` : '💭 思考';
+        const enLabel = dur ? `💭 ${dur.en}` : '💭 Thought';
+        innerLines.push(`**${enLabel}**`);
+        innerLines.push(event.text);
+        innerLines.push('');
+      } else {
+        const statusIcon = event.status === 'complete' ? '✅' : '❌';
+        const dur = event.durationMs != null ? formatElapsed(event.durationMs) : '';
+        innerLines.push(dur
+          ? `${statusIcon} 🔧 **${event.name}** (${dur})`
+          : `${statusIcon} 🔧 **${event.name}**`);
+        innerLines.push('');
+      }
     }
+
+    const totalToolMs = streamEvents
+      .filter((e): e is Extract<StreamEvent, { type: 'tool' }> => e.type === 'tool')
+      .reduce((s, e) => s + (e.durationMs ?? 0), 0);
+    const totalReasonMs = streamEvents
+      .filter((e): e is Extract<StreamEvent, { type: 'reasoning' }> => e.type === 'reasoning')
+      .reduce((s, e) => s + (e.elapsedMs ?? 0), 0);
+    const totalMs = totalToolMs + totalReasonMs;
+    const totalDur = totalMs > 0 ? formatElapsed(totalMs) : '';
+
+    const zhHeader = totalDur ? `思考过程 (${totalDur})` : '思考过程';
+    const enHeader = totalDur ? `Process (${totalDur})` : 'Process';
+
+    elements.push({
+      tag: 'collapsible_panel',
+      expanded: false,
+      header: {
+        title: {
+          tag: 'markdown',
+          content: enHeader,
+          i18n_content: { zh_cn: zhHeader, en_us: enHeader },
+        },
+        vertical_align: 'center',
+        icon: { tag: 'standard_icon', token: 'down-small-ccm_outlined', size: '16px 16px' },
+        icon_position: 'follow_text',
+        icon_expanded_angle: -180,
+      },
+      border: { color: 'grey', corner_radius: '5px' },
+      vertical_spacing: '8px',
+      padding: '8px 8px 8px 8px',
+      elements: [{ tag: 'markdown', content: innerLines.join('\n').trim(), text_size: 'notation' }],
+    });
   }
 
   // Full text content
