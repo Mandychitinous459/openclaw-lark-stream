@@ -8,8 +8,10 @@ src/tools/docs/
 
 *.log
 
-# .idea
+# IDE / editor
 .idea/
+.vscode/
+.claude/
 
 
 # Internal documentation directories
