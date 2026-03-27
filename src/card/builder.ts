@@ -278,12 +278,9 @@ export function formatFooterRuntimeSegments(params: {
     const total = typeof freshTotal === 'number' ? Math.max(0, freshTotal) : undefined;
     const ctx = typeof metrics.contextTokens === 'number' ? Math.max(0, metrics.contextTokens) : undefined;
     if (total != null && ctx != null) {
-      const totalLabel = compactNumber(total);
-      const ctxLabel = compactNumber(ctx);
       const pct = ctx > 0 ? Math.round((total / ctx) * 100) : 0;
-      const pctLabel = `${pct}%`;
-      zhParts.push(`上下文 ${totalLabel}/${ctxLabel} (${pctLabel})`);
-      enParts.push(`Context ${totalLabel}/${ctxLabel} (${pctLabel})`);
+      zhParts.push(`${pct}% ctx`);
+      enParts.push(`${pct}% ctx`);
     }
   }
 

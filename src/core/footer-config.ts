@@ -17,15 +17,15 @@ import type { FeishuFooterConfig } from './types';
 /**
  * The default footer configuration.
  *
- * By default status text ("已完成" / "出错" / "已停止") and elapsed
- * time are shown. Token/cache/context/model metrics are off by default.
+ * Status, elapsed, tokens and context usage are on by default.
+ * Cache details and model name are off by default.
  */
 export const DEFAULT_FOOTER_CONFIG: Required<FeishuFooterConfig> = {
   status: true,
   elapsed: true,
-  tokens: false,
+  tokens: true,
   cache: false,
-  context: false,
+  context: true,
   model: false,
 };
 
