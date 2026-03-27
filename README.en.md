@@ -2,9 +2,12 @@ English | [中文](./README.md)
 
 # OpenClaw Lark/Feishu Plugin — Stream Card Edition
 
-![demo](./demo.gif)
-
 Based on the official [openclaw-lark](https://github.com/larksuite/openclaw-lark) plugin, with **real-time streaming output** and **agent execution visibility**.
+<img src="./demo.gif" width="480" />
+<sub>▲ Real streaming in group chats with full execution trace</sub>
+
+<img src="./demo_footer.png" width="480" />
+<sub>▲ Card footer: status, elapsed time, token usage, context usage — each toggleable independently</sub>
 
 ## ✨ What's Changed
 
@@ -108,7 +111,8 @@ openclaw gateway restart
 | elapsed | `8.3s` | `Elapsed 8.3s` |
 | context | `1% ctx` | `Context 19k/200k (10%)` |
 | cache | `94% cache` | `Cache 18k/1k (94%)` |
-| tokens / model | same | same |
+| tokens | `↑ 19k ↓ 145` | `In 19k Out 145` |
+| model | same | same |
 
 Default footer:
 
@@ -128,7 +132,7 @@ openclaw gateway restart
 Result:
 
 ```
-Completed · Elapsed 8.3s · ↑ 19k ↓ 145 · Cache 18k/1k (94%) · Context 19k/200k (10%) · claude-3-7-sonnet
+Completed · Elapsed 8.3s · In 19k Out 145 · Cache 18k/1k (94%) · Context 19k/200k (10%) · claude-3-7-sonnet
 ```
 
 Example — hide token counts, show model name:
