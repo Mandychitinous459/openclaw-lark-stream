@@ -12,6 +12,8 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import path from 'node:path';
 import { SILENT_REPLY_TOKEN } from 'openclaw/plugin-sdk/reply-runtime';
 import type { ReplyPayload } from 'openclaw/plugin-sdk';
 import { extractLarkApiCode } from '../core/api-error';
@@ -167,96 +169,24 @@ export class StreamingCardController {
 
   private async getFooterSessionMetrics(): Promise<FooterSessionMetrics | undefined> {
     try {
-      const runtime = LarkClient.runtime as {
-        agent?: {
-          session?: {
-            resolveStorePath?: (storePath?: string) => string;
-            loadSessionStore?: (storePath: string) => Record<string, Record<string, unknown>>;
-          };
-        };
-        channel?: {
-          session?: {
-            resolveStorePath?: (storePath?: string) => string;
-          };
-        };
-      } | null;
-      if (!runtime) return undefined;
+      // Read sessions.json directly, same as WebUI.
+      // Path: ~/.openclaw/agents/{agentId}/sessions/sessions.json
+      const storePath = path.join(homedir(), '.openclaw', 'agents', this.deps.agentId, 'sessions', 'sessions.json');
 
-      const cfgWithSession = this.deps.cfg as { sessions?: { store?: string }; session?: { store?: string } };
-      const sessionStorePath = cfgWithSession.sessions?.store ?? cfgWithSession.session?.store;
-      const key = this.deps.sessionKey.trim().toLowerCase();
-
-      const sessionApi = runtime.agent?.session;
-      if (sessionApi?.resolveStorePath && sessionApi?.loadSessionStore) {
-        const storePath = sessionApi.resolveStorePath(sessionStorePath, { agentId: this.deps.agentId });
-        const store = sessionApi.loadSessionStore(storePath, { skipCache: true });
-        // sessions.json keys have the format "agent:<agentId>:<sessionKey>".
-        // Try the prefixed key first, fall back to the bare key.
-        const prefixedKey = `agent:${this.deps.agentId}:${key}`;
-        const entry = store[prefixedKey] ?? store[key];
-        if (!entry || typeof entry !== 'object') {
-          log.debug('footer metrics lookup: session entry missing', {
-            sessionKey: this.deps.sessionKey,
-            normalizedSessionKey: key,
-            storePath,
-            source: 'runtime.agent.session',
-          });
-          return undefined;
-        }
-
-        const metrics: FooterSessionMetrics = {
-          inputTokens: typeof entry.inputTokens === 'number' ? entry.inputTokens : undefined,
-          outputTokens: typeof entry.outputTokens === 'number' ? entry.outputTokens : undefined,
-          cacheRead: typeof entry.cacheRead === 'number' ? entry.cacheRead : undefined,
-          cacheWrite: typeof entry.cacheWrite === 'number' ? entry.cacheWrite : undefined,
-          totalTokens: typeof entry.totalTokens === 'number' ? entry.totalTokens : undefined,
-          totalTokensFresh: typeof entry.totalTokensFresh === 'boolean' ? entry.totalTokensFresh : undefined,
-          contextTokens: typeof entry.contextTokens === 'number' ? entry.contextTokens : undefined,
-          model: typeof entry.model === 'string' ? entry.model : undefined,
-        };
-        log.debug('footer metrics lookup: session entry found', {
-          sessionKey: this.deps.sessionKey,
-          normalizedSessionKey: key,
-          storePath,
-          source: 'runtime.agent.session',
-          hasMetrics: !!(
-            metrics.inputTokens != null ||
-            metrics.outputTokens != null ||
-            metrics.cacheRead != null ||
-            metrics.cacheWrite != null ||
-            metrics.totalTokens != null ||
-            metrics.contextTokens != null ||
-            metrics.model
-          ),
-        });
-        return metrics;
-      }
-
-      const channelSession = runtime.channel?.session;
-      if (!channelSession?.resolveStorePath) {
-        return undefined;
-      }
-
-      const storePath = channelSession.resolveStorePath(sessionStorePath);
       const raw = await readFile(storePath, 'utf8');
-      const parsed: unknown = JSON.parse(raw);
-      const store =
-        parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-          ? (parsed as Record<string, Record<string, unknown>>)
-          : {};
-      const prefixedKey2 = `agent:${this.deps.agentId}:${key}`;
-      const entry = store[prefixedKey2] ?? store[key];
+      const store = JSON.parse(raw) as Record<string, Record<string, unknown>>;
+
+      // sessions.json keys: "agent:<agentId>:<sessionKey>"
+      const key = this.deps.sessionKey.trim().toLowerCase();
+      const prefixedKey = `agent:${this.deps.agentId}:${key}`;
+      const entry = store[prefixedKey] ?? store[key];
+
       if (!entry || typeof entry !== 'object') {
-        log.debug('footer metrics lookup: session entry missing', {
-          sessionKey: this.deps.sessionKey,
-          normalizedSessionKey: key,
-          storePath,
-          source: 'channel.session.file',
-        });
+        log.debug('footer metrics: session entry not found', { prefixedKey, key });
         return undefined;
       }
 
-      const metrics: FooterSessionMetrics = {
+      return {
         inputTokens: typeof entry.inputTokens === 'number' ? entry.inputTokens : undefined,
         outputTokens: typeof entry.outputTokens === 'number' ? entry.outputTokens : undefined,
         cacheRead: typeof entry.cacheRead === 'number' ? entry.cacheRead : undefined,
@@ -266,22 +196,6 @@ export class StreamingCardController {
         contextTokens: typeof entry.contextTokens === 'number' ? entry.contextTokens : undefined,
         model: typeof entry.model === 'string' ? entry.model : undefined,
       };
-      log.debug('footer metrics lookup: session entry found', {
-        sessionKey: this.deps.sessionKey,
-        normalizedSessionKey: key,
-        storePath,
-        source: 'channel.session.file',
-        hasMetrics: !!(
-          metrics.inputTokens != null ||
-          metrics.outputTokens != null ||
-          metrics.cacheRead != null ||
-          metrics.cacheWrite != null ||
-          metrics.totalTokens != null ||
-          metrics.contextTokens != null ||
-          metrics.model
-        ),
-      });
-      return metrics;
     } catch (err) {
       log.warn('footer metrics lookup failed', { error: String(err), sessionKey: this.deps.sessionKey });
       return undefined;
