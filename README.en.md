@@ -24,6 +24,8 @@ The official plugin delivers LLM block results all at once after completion. Thi
 ## 📢 News
 
 - **2026.3.30**
+  - Install script now automatically disables the built-in OpenClaw Feishu plugin to avoid conflicts
+  - Post-install runs `gateway install` to register the service, plus a health check
   - ⚠️ **OpenClaw 3.28 is not currently supported** due to compatibility issues. Please downgrade to **3.24**. (Support expected before Apr 4)
 - **2026.3.27**
   - Compatible with OpenClaw >= 2026.3.22
