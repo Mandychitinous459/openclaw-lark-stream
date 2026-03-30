@@ -73,9 +73,9 @@ openclaw gateway restart
 
 ```bash
 openclaw config set channels.feishu.streaming false
-openclaw config set channels.feishu.replyMode.direct card
-openclaw config set channels.feishu.replyMode.group card
-openclaw config set channels.feishu.replyMode.default card
+openclaw config set channels.feishu.replyMode.direct static
+openclaw config set channels.feishu.replyMode.group static
+openclaw config set channels.feishu.replyMode.default static
 openclaw gateway restart
 ```
 
